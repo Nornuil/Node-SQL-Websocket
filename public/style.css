@@ -1,0 +1,39 @@
+body{
+    background-color:antiquewhite;
+    width: 100%;
+}
+
+form{
+    margin: auto;
+    margin-top: 50px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background-color:rgb(160, 189, 243);
+    padding: 20px;
+
+}
+
+.tablaProductos{
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+}
+
+body .contenedorChat{
+    width: 80%;
+    margin: auto;
+    margin-top: 20px;
+}
+
+body .contenedorChat .messages{
+    padding: 10px;
+    background-color:rgb(221, 231, 76);
+    height: 150px;
+    overflow-y: scroll;
+}
+
+body .contenedorChat .formChat{
+    margin-top: 0px;
+    background-color:rgb(167, 175, 60);
+}
