@@ -5,12 +5,12 @@ const manejadorProductos = new Productos();
 const knex = require('../db');
   
   router.get("/",(req, res)=>{
-        req.app.io.sockets.emit("update_products", manejadorProductos.getAll());
+        req.app.io.sockets.emit("update_products", manejadorProductos.getAll(knex,"productos"));
 });
 
 router.get('/productos', (req, res) =>{
-    const productos = manejadorProductos.getAll();
-    req.app.io.sockets.emit("update_products", manejadorProductos.getAll());
+    const productos = manejadorProductos.getAll(knex,"productos");
+    req.app.io.sockets.emit("update_products", manejadorProductos.getAll(knex,"productos"));
     res.send(productos);
     
 });
@@ -18,7 +18,7 @@ router.get('/productos', (req, res) =>{
 router.post('/productos', (req, res) =>{
     manejadorProductos.save(knex,"productos", req.body)
     // const producto = manejadorProductos.save(req.body);
-    req.app.io.sockets.emit("update_products", manejadorProductos.getAll());
+    req.app.io.sockets.emit("update_products", manejadorProductos.getAll(knex,"productos"));
 });
 
 router.get('/productos/:id', (req, res) =>{
