@@ -1,7 +1,19 @@
-class Productos {
-  static id = 1;
+// const ProductoSqlite = new cl_Producto(
+//   {
+//     client: "sqlite3",
+//     connection: { filename: "./DB/mydb.sqlite" },
+//   },
+//   "productos"
+// );
+//productos en base de datos
 
-  constructor() {
+const knex = require("knex");
+
+class Productos {
+  constructor(dbOptions, table) {
+    this.conexion = knex(dbOptions);
+    this.tabla = table;
+    var knex2 = require("knex")(dbOptions);
     this.productos = [
       {
         title: "matias",
@@ -12,20 +24,22 @@ class Productos {
     ];
   }
 
-  getAll(db, nameTable) {
-    // return this.productos.length == 0 ? null : this.productos;
-    db.from(nameTable)
-      .then((rows) => {
-        return rows;
-      })
-      .catch((err) => {
-        console.log(err.sqlMessage);
-        console.log(err.sql);
-      })
-      .finally(() => {
-        console.log("finally");
-        db.destroy();
-      });
+  async getAll(db, nameTable) {
+    return new Promise((resolve, reject) => {
+      this.conexion
+        .from(nameTable)
+        .then((rows) => {
+          return rows;
+        })
+        .catch((err) => {
+          console.log(err.sqlMessage);
+          console.log(err.sql);
+        })
+        .finally(() => {
+          console.log("finally");
+          this.conexion.destroy();
+        });
+    });
   }
 
   getById(id) {
@@ -39,13 +53,17 @@ class Productos {
     }
   }
 
-  save(db, nameTable, producto) {
+  save(producto) {
+    console.log(producto);
     if (producto.title && producto.price && producto.thumbnail) {
       ////////////////////////
-      db.schema.hasTable(nameTable).then(function (exists) {
+      const conex = this.conexion;
+      const tablita = this.tabla;
+      conex.schema.hasTable(tablita).then(function (exists) {
         if (!exists) {
-          db.schema
-            .createTable(nameTable, (table) => {
+          console.log("entro al if");
+          conex.schema
+            .createTable(tablita, (table) => {
               table.increments();
               table.string("title", 15).notNullable();
               table.float("price").notNullable();
@@ -53,7 +71,7 @@ class Productos {
             })
             .then((data) => {
               console.log("Creada la tabla productos");
-              db(nameTable)
+              this.conexion(tablita)
                 .insert(producto)
                 .then((data) => {
                   console.log("Se registró exitosamente..");
@@ -65,7 +83,7 @@ class Productos {
                 })
                 .finally(() => {
                   console.log("finally");
-                  db.destroy();
+                  this.conexion.destroy();
                 });
             })
             .catch((err) => {
@@ -73,10 +91,10 @@ class Productos {
               console.log(err.sql);
             })
             .finally(() => {
-              db.destroy();
+              conex.destroy();
             });
         } else {
-          db(nameTable)
+          conex(tablita)
             .insert(producto)
             .then((data) => {
               console.log("Se registró exitosamente..");
@@ -88,7 +106,7 @@ class Productos {
             })
             .finally(() => {
               console.log("finally con tabla");
-              db.destroy();
+              this.conexion.destroy();
             });
         }
       });
@@ -132,5 +150,4 @@ class Productos {
   }
 }
 
-
-module.exports = {Productos};
+module.exports = { Productos };
