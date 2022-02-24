@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 const { Productos } = require("../classProductos/classProductos");
 // const manejadorProductos = new Productos();
-const knex = require("../db");
 
 const manejadorProductos = new Productos(
   {
@@ -31,6 +30,7 @@ router.get("/productos", (req, res) => {
 
 router.post("/productos", (req, res) => {
   manejadorProductos.save(req.body);
+  // manejadorProductos.close();
   // const producto = manejadorProductos.save(req.body);
   //   req.app.io.sockets.emit(
   //     "update_products",
