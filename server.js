@@ -1,6 +1,7 @@
 const express = require("express");
 const productos = require("./routes/productos");
 const PORT = process.env.PORT || 8080;
+const { Productos } = require("./classProductos/classProductos");
 
 const app = express();
 app.use(express.json());
@@ -14,19 +15,6 @@ const { Server: IOServer } = require("socket.io");
 const httpServer = new HttpServer(app);
 const io = new IOServer(httpServer);
 app.io = io;
-
-//ARRAY PARA EL CHAT
-const MENSAJES = [
-  {
-    email: "Admin",
-    message: "Bienvenido al chat!!",
-    fecha: new Date(),
-  },
-];
-
-// obtengo los productos
-const { Productos } = require("./classProductos/classProductos");
-// const manejadorProductos = new Productos();
 
 const manejadorProductos = new Productos(
   {
@@ -43,25 +31,23 @@ const manejadorProductos = new Productos(
   "productos"
 );
 
-let listadoProductos = manejadorProductos.getAll();
+manejadorProductos.createTables();
 
-app.use(function (req, res, next) {
-  req.user = {
-    name: "Matias",
-    is_admin: false,
-  };
-  next();
-});
-
-io.on("connection", (socket) => {
+io.on("connection", async (socket) => {
   console.log("Cliente conectado con id: ", socket.id);
-  socket.emit("update_products", listadoProductos);
+  socket.emit("update_products", await manejadorProductos.getAll());
   //CHAT
-  socket.on("new_message", (data) => {
-    MENSAJES.push(data);
-    io.sockets.emit("messages_received", MENSAJES);
+  socket.on("new_message", async (data) => {
+    await manejadorProductos.insertMessage(data);
+    io.sockets.emit(
+      "messages_received",
+      await manejadorProductos.getMessages("mensajes")
+    );
   });
-  io.sockets.emit("messages_received", MENSAJES);
+  io.sockets.emit(
+    "messages_received",
+    await manejadorProductos.getMessages("mensajes")
+  );
 });
 
 const server = httpServer.listen(PORT, () =>

@@ -1,98 +1,138 @@
-// const ProductoSqlite = new cl_Producto(
-//   {
-//     client: "sqlite3",
-//     connection: { filename: "./DB/mydb.sqlite" },
-//   },
-//   "productos"
-// );
-//productos en base de datos
-const Contenedor = require("../db");
-// const knex = require("knex");
+const knex = require("knex");
 
 class Productos {
   constructor(dbOptions, table) {
-    this.conexion = dbOptions;
-    this.tabla = table;
+    this.knex = knex(dbOptions);
+    this.table = table;
   }
 
-  async getAll(db, nameTable) {
-    // return new Promise((resolve, reject) => {
-    //   this.conexion
-    //     .from(nameTable)
-    //     .then((rows) => {
-    //       return rows;
-    //     })
-    //     .catch((err) => {
-    //       console.log(err.sqlMessage);
-    //       console.log(err.sql);
-    //     })
-    //     .finally(() => {
-    //       console.log("finally");
-    //       this.conexion.destroy();
-    //     });
-    // });
-  }
-
-  getById(id) {
-    const resultado = this.productos.find(
-      (idBuscado) => idBuscado.id === parseInt(id)
-    );
-    if (resultado === undefined) {
-      return { error: "producto no encontrado" };
-    } else {
-      return resultado;
+  async getAll() {
+    try {
+      const contenido = await this.knex(this.table);
+      return contenido;
+    } catch (err) {
+      return `Error: ${err} ${err.sqlMessage}\n${err.sql}`;
     }
   }
 
-  close() {
-    this.conexion.destroy();
+  async getById(id) {
+    try {
+      let contenido = await this.knex
+        .from(this.table)
+        .select("*")
+        .where("id", parseInt(id));
+      return contenido.length === 0
+        ? (contenido = `No existe el producto con id: ${id}`)
+        : contenido;
+    } catch (err) {
+      return `Error: ${err.sqlMessage}\n${err.sql}`;
+    }
   }
 
-  save(producto) {
+  async save(producto) {
     if (producto.title && producto.price && producto.thumbnail) {
-      const contenedor = new Contenedor(this.conexion);
-      contenedor
-        .isExistTable(this.tabla)
-        .then((isExist) => (isExist ? true : contenedor.createTable()))
-        .then(() => contenedor.createarticles(producto))
-        .then(() => contenedor.selectArticles())
-        .then((rows) => console.log(rows))
-        .finally(() => contenedor.destroy());
-    } else {
-      return "Campo de producto faltante";
-    }
-  }
-
-  updateById(id, producto) {
-    const resultado = this.productos.find(
-      (idBuscado) => idBuscado.id === parseInt(id)
-    );
-
-    if (resultado === undefined) {
-      return { error: "producto no encontrado" };
-    } else {
-      if (producto.title && producto.price && producto.thumbnail) {
-        resultado.title = producto.title;
-        resultado.price = producto.price;
-        resultado.thumbnail = producto.thumbnail;
-      } else {
-        return "No es el formato de producto que podes ingresar";
+      try {
+        const contenido = await this.knex(this.table).insert(producto);
+        return contenido;
+      } catch (err) {
+        return `Error: ${err.sqlMessage}\n${err.sql}`;
       }
     }
   }
 
-  deleteById(id) {
-    const resultado = this.productos.find(
-      (idBuscado) => idBuscado.id === parseInt(id)
-    );
-
-    if (resultado === undefined) {
-      return { error: "producto no encontrado" };
+  async updateById(id, producto) {
+    if (producto.title && producto.price && producto.thumbnail) {
+      try {
+        const contenido = await this.knex
+          .from(this.table)
+          .where("id", parseInt(id))
+          .update(producto);
+        return contenido === 0
+          ? `Producto con id: ${id} no existe`
+          : `Producto con id: ${id} actualizado`;
+      } catch (err) {
+        return `Error: ${err.sqlMessage}\n${err.sql}`;
+      }
     } else {
-      this.productos = this.productos.filter(
-        (idEliminado) => idEliminado.id !== parseInt(id)
-      );
+      return "Error con los campos del producto";
     }
+  }
+
+  async deleteById(id) {
+    try {
+      const contenido = await this.knex
+        .from(this.table)
+        .where("id", parseInt(id))
+        .del();
+      return contenido === 0
+        ? `Producto con id: ${id} no existe`
+        : `Producto con id: ${id} borrado`;
+    } catch (err) {
+      return `Error: ${err.sqlMessage}\n${err.sql}`;
+    }
+  }
+
+  async createTables() {
+    await this.knex.schema
+      .hasTable("productos")
+      .then((exists) => {
+        if (exists) {
+          console.log('La tabla "productos" ya existe');
+        } else {
+          return this.knex.schema
+            .createTable("productos", (table) => {
+              table.increments();
+              table.string("title");
+              table.float("price");
+              table.string("thumbnail");
+            })
+            .then(() => {
+              console.log("Tabla productos creada");
+            });
+        }
+      })
+      .catch((err) => {
+        console.log("Error de base de datos", err);
+      });
+
+    await this.knex.schema
+      .hasTable("mensajes")
+      .then((exists) => {
+        if (exists) {
+          console.log('La tabla "mensajes" ya existe');
+        } else {
+          return this.knex.schema
+            .createTable("mensajes", (table) => {
+              table.increments();
+              table.string("email");
+              table.string("fecha");
+              table.string("message");
+            })
+            .then(() => {
+              console.log("Tabla mensajes creada");
+              this.knex("mensajes")
+                .insert([
+                  {
+                    email: "Admin",
+                    fecha: `${new Date()}`,
+                    message: "¡Bienvenidos al chat colegas!",
+                  },
+                ])
+                .then();
+            });
+        }
+      })
+      .catch((err) => {
+        console.log("Error de base de datos", err);
+      });
+  }
+
+  async insertMessage(data) {
+    return await this.knex("mensajes").insert(data);
+  }
+
+  async getMessages() {
+    return await this.knex("mensajes");
   }
 }
 

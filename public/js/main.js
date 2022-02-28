@@ -37,25 +37,27 @@ async function showProducts(data) {
 }
 
 //CHAT
-document.getElementById("formChat").addEventListener("submit", e=> {
+document.getElementById("formChat").addEventListener("submit", (e) => {
   e.preventDefault();
   socket.emit("new_message", {
-      email: document.querySelector("input[name=email]").value,
-      message: document.querySelector("input[name=message]").value,
-      fecha: new Date()
-  })
+    email: document.querySelector("input[name=email]").value,
+    message: document.querySelector("input[name=message]").value,
+    fecha: new Date(),
+  });
   // console.log("boton apretado");
-})
+});
 
-const render = data => {
-  const html = data.map(elem => {
+const render = (data) => {
+  const html = data
+    .map((elem) => {
       return `<div>
       <strong>${elem.email}</strong>
       <em>${elem.message}</em>
       <em class="fecha">${elem.fecha}</em>
-      </div>`
-  }).join("");
-document.querySelector("#messages").innerHTML = html;
+      </div>`;
+    })
+    .join("");
+  document.querySelector("#messages").innerHTML = html;
 };
 
 const renderhbs = (messages) => {
@@ -66,4 +68,4 @@ const renderhbs = (messages) => {
 
 socket.on("messages_received", (data) => {
   renderhbs(data);
-})
+});

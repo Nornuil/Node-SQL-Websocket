@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const { Productos } = require("../classProductos/classProductos");
-// const manejadorProductos = new Productos();
 
 const manejadorProductos = new Productos(
   {
@@ -18,44 +17,50 @@ const manejadorProductos = new Productos(
   "productos"
 );
 
-router.get("/", (req, res) => {
-  // req.app.io.sockets.emit("update_products", manejadorProductos.getAll(knex,"productos"));
-});
-
-router.get("/productos", (req, res) => {
-  // const productos = manejadorProductos.getAll(knex,"productos");
-  // req.app.io.sockets.emit("update_products", manejadorProductos.getAll(knex,"productos"));
+router.get("/productos", async (req, res) => {
+  const productos = await manejadorProductos.getAll();
+  req.app.io.sockets.emit("update_products", productos);
   res.send(productos);
+  console.log(productos);
 });
 
-router.post("/productos", (req, res) => {
-  manejadorProductos.save(req.body);
-  // manejadorProductos.close();
-  // const producto = manejadorProductos.save(req.body);
-  //   req.app.io.sockets.emit(
-  //     "update_products",
-  //     // manejadorProductos.getAll(knex, "productos")
-  //   );
+router.post("/productos", async (req, res) => {
+  const producto = await manejadorProductos.save(req.body);
+  req.app.io.sockets.emit("update_products", await manejadorProductos.getAll());
+  res.send(`Se recibió el producto: ${JSON.stringify(producto)}`);
+  console.log(`Se recibió el producto: ${JSON.stringify(producto)}`);
 });
 
-router.get("/productos/:id", (req, res) => {
-  const producto = manejadorProductos.getById(req.params.id);
+router.get("/productos/:id", async (req, res) => {
+  const producto = await manejadorProductos.getById(req.params.id);
   res.send(producto);
   console.log(`El producto con el id es: ${JSON.stringify(producto)}`);
 });
 
-router.put("/productos/:id", (req, res) => {
-  const producto = manejadorProductos.updateById(req.params.id, req.body);
+router.put("/productos/:id", async (req, res) => {
+  const producto = await manejadorProductos.updateById(req.params.id, req.body);
+  req.app.io.sockets.emit("update_products", await manejadorProductos.getAll());
   res.send(
+    producto === undefined
+      ? `Se actualizó el producto con id ${req.params.id}`
+      : JSON.stringify(producto)
+  );
+  console.log(
     producto === undefined
       ? `Se actualizó el producto con id ${req.params.id}`
       : JSON.stringify(producto)
   );
 });
 
-router.delete("/productos/:id", (req, res) => {
-  const producto = manejadorProductos.deleteById(req.params.id);
+router.delete("/productos/:id", async (req, res) => {
+  const producto = await manejadorProductos.deleteById(req.params.id);
+  req.app.io.sockets.emit("update_products", await manejadorProductos.getAll());
   res.send(
+    producto === undefined
+      ? `Se eliminó el producto con id ${req.params.id}`
+      : JSON.stringify(producto)
+  );
+  console.log(
     producto === undefined
       ? `Se eliminó el producto con id ${req.params.id}`
       : JSON.stringify(producto)
